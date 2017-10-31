@@ -6,17 +6,21 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Foundation;
+using Windows.UI.Core;
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Data;
+using ZalandoShop.Models;
 using ZalandoShop.Repository;
+using ZalandoShop.Views;
 
 namespace ZalandoShop.Utility
-{   
-    public class PaginatedCollection<T> : ObservableCollection<T>,ISupportIncrementalLoading
+{
+    public class PaginatedCollection<T> : ObservableCollection<T>,
+           ISupportIncrementalLoading
     {
         private Func<uint, Task<IEnumerable<T>>> load;
         public bool HasMoreItems { get; protected set; }
-        private FacetsRepository repInstance = new FacetsRepository();
-        int pageNumber = 0;
 
         public PaginatedCollection(Func<uint, Task<IEnumerable<T>>> load)
         {
@@ -28,16 +32,20 @@ namespace ZalandoShop.Utility
         {
             return AsyncInfo.Run(async c =>
             {
-                var data = await repInstance.GetArticlesList("NA5",++pageNumber,10,"male");
+                var data = await load(count);
+
+                foreach (var item in data)
+                {
+                    Add(item);
+                }
+
                 HasMoreItems = true;
 
                 return new LoadMoreItemsResult()
                 {
-                    Count = (uint)data.Count()
+                    Count = (uint)data.Count<T>()
                 };
             });
         }
     }
-
 }
-
