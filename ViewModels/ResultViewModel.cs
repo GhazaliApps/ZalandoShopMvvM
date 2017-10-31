@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Windows.UI.Xaml.Controls;
 using ZalandoShop.Models;
 using ZalandoShop.Repository;
+using ZalandoShop.Utility;
 
 namespace ZalandoShop.ViewModels
 {
@@ -17,11 +18,13 @@ namespace ZalandoShop.ViewModels
     {
         FacetsRepository _articlesRepInstance;
         private readonly INavigationService _navigationService;
+        private int pageNumber;
+
         private string brandKey { get; set; }
 
-        private ObservableCollection<Content> filteredArticles;
+        private PaginatedCollection<Content> filteredArticles;
         public   RelayCommand BackToSearchPage { get; private set;}
-        public ObservableCollection<Content> FilteredArticles
+        public PaginatedCollection<Content> FilteredArticles
 
         {
             get { return filteredArticles; }
@@ -45,21 +48,25 @@ namespace ZalandoShop.ViewModels
 
         private void IntializeMessenger()
         {
-            MessengerInstance.Register<Facet>(this, async (facet) =>
+            MessengerInstance.Register<Facet>(this, (facet) =>
             {
-                FilteredArticles = await _articlesRepInstance.GetArticlesList(facet.key, 1, 10, "male");
-                brandKey = facet.key;
+                FilteredArticles = new PaginatedCollection<Content>(async i =>
+                {
+                    var DataService = new FacetsRepository();
+                    return await DataService.GetArticlesList(facet.key, ++pageNumber, 10, "male");
+                });
+                //await _articlesRepInstance.GetArticlesList(facet.key, 1, 10, "male");
+                //brandKey = facet.key;
             });
         }
         public  ResultViewModel(INavigationService navigationService)
         {
             _articlesRepInstance = new FacetsRepository();
-            filteredArticles = new ObservableCollection<Content>();
-            _articlesRepInstance = new FacetsRepository();
+            pageNumber = 0;
             IntializeMessenger();
-         //   InitializeCommands();
+            InitializeCommands();
             _navigationService = navigationService;
-         }
+        }
 
     }
 }
